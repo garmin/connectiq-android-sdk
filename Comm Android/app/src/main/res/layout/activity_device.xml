@@ -1,0 +1,116 @@
+<!--
+ Copyright (C) 2015 Garmin International Ltd.
+ Subject to Garmin SDK License Agreement and Wearables Application Developer Agreement.
+-->
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:paddingBottom="@dimen/activity_vertical_margin"
+    tools:context="com.garmin.android.apps.connectiq.sample.comm.activities.MainActivity">
+
+    <TextView
+        android:id="@+id/devicename"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="5dp"
+        android:gravity="center_vertical"
+        android:minHeight="50dp"
+        android:textSize="18sp"
+        app:layout_constraintEnd_toStartOf="@id/devicestatus"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:text="Fenix 7" />
+
+    <TextView
+        android:id="@+id/devicestatus"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="5dp"
+        android:layout_marginEnd="5dp"
+        app:layout_constraintBottom_toBottomOf="@id/devicename"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@id/devicename"
+        tools:text="CONENCTED" />
+
+    <View
+        android:id="@+id/dividerA"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginTop="5dp"
+        android:background="#cdcdcd"
+        app:layout_constraintTop_toBottomOf="@id/devicename" />
+
+    <TextView
+        android:id="@+id/openapp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="5dp"
+        android:layout_marginTop="5dp"
+        android:gravity="center_vertical"
+        android:minHeight="43dp"
+        android:text="@string/open_app_open"
+        app:layout_constraintTop_toBottomOf="@id/dividerA" />
+
+    <View
+        android:id="@+id/dividerB"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginTop="5dp"
+        android:background="#cdcdcd"
+        app:layout_constraintTop_toBottomOf="@id/openapp" />
+
+    <TextView
+        android:id="@+id/openstore"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="5dp"
+        android:layout_marginTop="5dp"
+        android:gravity="center_vertical"
+        android:minHeight="43dp"
+        android:text="@string/open_store"
+        app:layout_constraintTop_toBottomOf="@id/dividerB" />
+
+    <View
+        android:id="@+id/dividerC"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginTop="5dp"
+        android:background="#cdcdcd"
+        app:layout_constraintTop_toBottomOf="@id/openstore" />
+
+    <TextView
+        android:id="@+id/taptosend"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="5dp"
+        android:layout_marginTop="5dp"
+        android:text="@string/tap_to_send"
+        app:layout_constraintTop_toBottomOf="@id/dividerC" />
+
+    <View
+        android:id="@+id/dividerD"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginTop="5dp"
+        android:background="#cdcdcd"
+        app:layout_constraintTop_toBottomOf="@id/taptosend" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@android:id/list"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/dividerD" />
+
+    <TextView
+        android:id="@android:id/empty"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

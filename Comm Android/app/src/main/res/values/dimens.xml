@@ -1,0 +1,11 @@
+<!--
+ Copyright (C) 2015 Garmin International Ltd.
+ Subject to Garmin SDK License Agreement and Wearables Application Developer Agreement.
+-->
+<resources>
+
+    <!-- Default screen margins, per the Android Design guidelines. -->
+    <dimen name="activity_horizontal_margin">16dp</dimen>
+    <dimen name="activity_vertical_margin">16dp</dimen>
+
+</resources>
