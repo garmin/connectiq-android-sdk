@@ -16,8 +16,8 @@ Maven Central Repository: https://search.maven.org/artifact/com.garmin.connectiq
 
 ```
 <dependency>          
-    <groupId>com.squareup.retrofit2</groupId>          
-    <artifactId>retrofit</artifactId>    
+    <groupId>com.garmin.connectiq</groupId>          
+    <artifactId>monkeybrains</artifactId>
     <version>1.0.2</version>  
 </dependency>
 ```   
@@ -25,7 +25,7 @@ Maven Central Repository: https://search.maven.org/artifact/com.garmin.connectiq
 #### GRADLE
 
 ```
-implementation("com.squareup.retrofit2:retrofit:1.0.2")
+implementation("com.garmin.connectiq:monkeybrains:1.0.2")
 ```
 
 ## Samples
