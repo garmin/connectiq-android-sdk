@@ -30,7 +30,9 @@ android {
 
 dependencies {
     implementation("androidx.recyclerview:recyclerview:1.2.1")
-    implementation("androidx.constraintlayout:constraintlayout:2.1.3")
+    implementation("androidx.constraintlayout:constraintlayout:2.1.4")
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.5.1")
 
-    implementation("com.garmin.connectiq:monkeybrains:1.0.2")
+    implementation(files("./libs/monkeybrains-sdk-release.aar"))
+    implementation("androidx.appcompat:appcompat:1.5.1")
 }

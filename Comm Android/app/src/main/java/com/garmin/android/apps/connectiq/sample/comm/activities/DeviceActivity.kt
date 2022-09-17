@@ -4,7 +4,6 @@
  */
 package com.garmin.android.apps.connectiq.sample.comm.activities
 
-import android.app.Activity
 import android.app.AlertDialog
 import android.content.Context
 import android.content.Intent
@@ -14,6 +13,8 @@ import android.util.Log
 import android.view.View
 import android.widget.TextView
 import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.garmin.android.apps.connectiq.sample.comm.MessageFactory
@@ -24,6 +25,9 @@ import com.garmin.android.connectiq.IQApp
 import com.garmin.android.connectiq.IQDevice
 import com.garmin.android.connectiq.exception.InvalidStateException
 import com.garmin.android.connectiq.exception.ServiceUnavailableException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 private const val TAG = "DeviceActivity"
 private const val EXTRA_IQ_DEVICE = "IQDevice"
@@ -32,7 +36,7 @@ private const val COMM_WATCH_ID = "a3421feed289106a538cb9547ab12095"
 // TODO Add a valid store app id.
 private const val STORE_APP_ID = ""
 
-class DeviceActivity : Activity() {
+class DeviceActivity : AppCompatActivity() {
 
     companion object {
         fun getIntent(context: Context, device: IQDevice?): Intent {
@@ -209,18 +213,29 @@ class DeviceActivity : Activity() {
     }
 
     private fun onItemClick(message: Any) {
-        try {
-            connectIQ.sendMessage(device, myApp, message) { device, app, status ->
-                Toast.makeText(this@DeviceActivity, status.name, Toast.LENGTH_SHORT).show()
-            }
-        } catch (e: InvalidStateException) {
-            Toast.makeText(this, "ConnectIQ is not in a valid state", Toast.LENGTH_SHORT).show()
-        } catch (e: ServiceUnavailableException) {
-            Toast.makeText(
-                this,
-                "ConnectIQ service is unavailable.   Is Garmin Connect Mobile installed and running?",
-                Toast.LENGTH_LONG
-            ).show()
+        lifecycleScope.launch {
+            val (sendStatus, toastLength) = sendMessage(message)
+            Toast.makeText(this@DeviceActivity, sendStatus, toastLength).show()
         }
+    }
+
+    suspend fun sendMessage(message: Any) : Pair<String, Int> {
+        var sendStatus = ""
+        var toastLength = Toast.LENGTH_SHORT
+
+        withContext(Dispatchers.IO) {
+            try {
+                connectIQ.sendMessage(device, myApp, message) { device, app, status ->
+                    sendStatus = status.name
+                }
+            } catch (e: InvalidStateException) {
+                sendStatus = "ConnectIQ is not in a valid state"
+            } catch (e: ServiceUnavailableException) {
+                sendStatus = "ConnectIQ service is unavailable.   Is Garmin Connect Mobile installed and running?"
+                toastLength = Toast.LENGTH_LONG
+            }
+        }
+
+        return Pair(sendStatus, toastLength)
     }
 }
