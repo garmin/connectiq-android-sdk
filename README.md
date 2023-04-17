@@ -3,29 +3,32 @@
 ## Official documentation
 
 - Android Guide: [Connect IQ SDK for Android]
-- The sample is available on [GitHub].
+
+## SDK License
+
+- The license for using SDK is available at https://repository.sonatype.org/service/local/artifact/maven/redirect?r=central-proxy&g=com.garmin.connectiq&a=ciq-companion-app-sdk&v=LATEST&p=pdf
 
 ## Download
 
-#### JAR
+#### AAR
 
-Maven Central Repository: https://search.maven.org/artifact/com.garmin.connectiq/monkeybrains        
-↓ Latest JAR https://search.maven.org/remote_content?g=com.garmin.connectiq&a=monkeybrains&v=LATEST
+Maven Central Repository: https://central.sonatype.com/artifact/com.garmin.connectiq/ciq-companion-app-sdk/
+↓ Latest AAR https://repository.sonatype.org/service/local/artifact/maven/redirect?r=central-proxy&g=com.garmin.connectiq&a=ciq-companion-app-sdk&v=LATEST&p=aar
 
 #### MAVEN
 
 ```
 <dependency>          
     <groupId>com.garmin.connectiq</groupId>          
-    <artifactId>monkeybrains</artifactId>
-    <version>1.0.2</version>  
+    <artifactId>ciq-companion-app-sdk</artifactId>
+    <version>2.0.1</version>
 </dependency>
 ```   
 
 #### GRADLE
 
 ```
-implementation("com.garmin.connectiq:monkeybrains:1.0.2")
+implementation("com.garmin.connectiq:ciq-companion-app-sdk:2.0.1@aar")
 ```
 
 ## Samples
@@ -65,9 +68,9 @@ Please be sure to refer to the <a href="https://forums.garmin.com/developer/conn
 * [garmin.com]: Your one-stop place for all things Garmin.
 * [Third-Party Tutorials and Open Source Apps]: This forum thread provides links to tutorials and open source projects that developers in the our community find helpful.
 
-## Licence
+## License
 
-Samples [Licence].
+Samples [License].
 
 
 [Connect IQ Forum]: https://forums.garmin.com/developer/connect-iq/
@@ -87,6 +90,5 @@ Samples [Licence].
 
 [Connect IQ SDK for Android]: https://developer.garmin.com/connect-iq/core-topics/mobile-sdk-for-android/
 
-[GitHub]: https://github.com/garmin/connectiq-android-sdk
 [CommWatch.prg]: https://github.com/garmin/connectiq-android-sdk/blob/master/CommWatch.prg
-[Licence]: https://github.com/garmin/connectiq-android-sdk/blob/master/LICENSE.md
+[License]: https://github.com/garmin/connectiq-android-sdk/blob/master/LICENSE.md
