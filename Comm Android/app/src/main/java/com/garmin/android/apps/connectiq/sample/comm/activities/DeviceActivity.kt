@@ -50,7 +50,7 @@ class DeviceActivity : Activity() {
     private lateinit var myApp: IQApp
 
     private var appIsOpen = false
-    private val openAppListener = ConnectIQ.IQOpenApplicationListener { device, app, status ->
+    private val openAppListener = ConnectIQ.IQOpenApplicationListener { _, _, status ->
         Toast.makeText(applicationContext, "App Status: " + status.name, Toast.LENGTH_SHORT).show()
 
         if (status == ConnectIQ.IQOpenApplicationStatus.APP_IS_ALREADY_RUNNING) {
@@ -96,7 +96,7 @@ class DeviceActivity : Activity() {
         try {
             connectIQ.unregisterForDeviceEvents(device)
             connectIQ.unregisterForApplicationEvents(device, myApp)
-        } catch (e: InvalidStateException) {
+        } catch (_: InvalidStateException) {
         }
     }
 
@@ -106,7 +106,7 @@ class DeviceActivity : Activity() {
         // Send a message to open the app
         try {
             connectIQ.openApplication(device, myApp, openAppListener)
-        } catch (ex: Exception) {
+        } catch (_: Exception) {
         }
     }
 
@@ -125,7 +125,7 @@ class DeviceActivity : Activity() {
             } else {
                 connectIQ.openStore(STORE_APP_ID)
             }
-        } catch (ex: Exception) {
+        } catch (_: Exception) {
         }
     }
 
@@ -134,7 +134,7 @@ class DeviceActivity : Activity() {
         // in our MainActivity, there is no need to do so here, we
         // can just get a reference to the one and only instance.
         try {
-            connectIQ.registerForDeviceEvents(device) { device, status ->
+            connectIQ.registerForDeviceEvents(device) { _, status ->
                 // Since we will only get updates for this device, just display the status
                 deviceStatusView?.text = status.name
             }
@@ -147,7 +147,7 @@ class DeviceActivity : Activity() {
     // Let's register to receive messages from our application on the device.
     private fun listenByMyAppEvents() {
         try {
-            connectIQ.registerForAppEvents(device, myApp) { device, app, message, status ->
+            connectIQ.registerForAppEvents(device, myApp) { _, _, message, _ ->
                 // We know from our Comm sample widget that it will only ever send us strings, but in case
                 // we get something else, we are simply going to do a toString() on each object in the
                 // message list.
@@ -194,8 +194,8 @@ class DeviceActivity : Activity() {
                         .show()
                 }
             })
-        } catch (e1: InvalidStateException) {
-        } catch (e1: ServiceUnavailableException) {
+        } catch (_: InvalidStateException) {
+        } catch (_: ServiceUnavailableException) {
         }
     }
 
@@ -210,7 +210,7 @@ class DeviceActivity : Activity() {
 
     private fun onItemClick(message: Any) {
         try {
-            connectIQ.sendMessage(device, myApp, message) { device, app, status ->
+            connectIQ.sendMessage(device, myApp, message) { _, _, status ->
                 Toast.makeText(this@DeviceActivity, status.name, Toast.LENGTH_SHORT).show()
             }
         } catch (e: InvalidStateException) {
