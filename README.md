@@ -20,14 +20,14 @@ Latest [AAR] is available for download on Maven Central Repository under [CIQ Co
 <dependency>          
     <groupId>com.garmin.connectiq</groupId>          
     <artifactId>ciq-companion-app-sdk</artifactId>
-    <version>2.0.2</version>
+    <version>2.0.3</version>
 </dependency>
 ```   
 
 #### GRADLE
 
 ```
-implementation("com.garmin.connectiq:ciq-companion-app-sdk:2.0.2@aar")
+implementation("com.garmin.connectiq:ciq-companion-app-sdk:2.0.3@aar")
 ```
 
 ## Samples
