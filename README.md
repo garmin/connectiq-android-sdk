@@ -12,7 +12,7 @@
 
 #### AAR
 
-Latest [AAR] is available for download on Maven Central Repository under [CIQ Companion APP SDK].
+Latest AAR is available for download on Maven Central Repository under [CIQ Companion APP SDK].
 
 #### MAVEN
 
@@ -20,14 +20,14 @@ Latest [AAR] is available for download on Maven Central Repository under [CIQ Co
 <dependency>          
     <groupId>com.garmin.connectiq</groupId>          
     <artifactId>ciq-companion-app-sdk</artifactId>
-    <version>2.0.3</version>
+    <version>2.2.0</version>
 </dependency>
 ```   
 
 #### GRADLE
 
 ```
-implementation("com.garmin.connectiq:ciq-companion-app-sdk:2.0.3@aar")
+implementation("com.garmin.connectiq:ciq-companion-app-sdk:2.2.0@aar")
 ```
 
 ## Samples
@@ -91,6 +91,5 @@ Samples [License].
 
 [CommWatch.prg]: https://github.com/garmin/connectiq-android-sdk/blob/master/CommWatch.prg
 [License]: https://github.com/garmin/connectiq-android-sdk/blob/master/LICENSE.md
-[License Agreement]: https://repository.sonatype.org/service/local/artifact/maven/redirect?r=central-proxy&g=com.garmin.connectiq&a=ciq-companion-app-sdk&v=LATEST&p=pdf
-[AAR]: https://repository.sonatype.org/service/local/artifact/maven/redirect?r=central-proxy&g=com.garmin.connectiq&a=ciq-companion-app-sdk&v=LATEST&p=aar
+[License Agreement]: https://developer.garmin.com/downloads/connect-iq/sdks/agreement.html
 [CIQ Companion APP SDK]: https://central.sonatype.com/artifact/com.garmin.connectiq/ciq-companion-app-sdk/
