@@ -46,6 +46,7 @@ class CommInputDelegate extends WatchUi.BehaviorDelegate {
             page = 0;
         }
         WatchUi.requestUpdate();
+        return true;
     }
 }
 
@@ -112,7 +113,7 @@ class ListnerMenuDelegate extends WatchUi.MenuInputDelegate {
             }
         } else if(item == :none) {
             Communications.registerForPhoneAppMessages(null);
-            Communications.setMailboxListener(null);
+            // Communications.setMailboxListener(null);
         } else if(item == :phoneFail) {
             crashOnMessage = true;
             Communications.registerForPhoneAppMessages(phoneMethod);

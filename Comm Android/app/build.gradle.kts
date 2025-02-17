@@ -1,6 +1,6 @@
 plugins {
     id("com.android.application")
-    kotlin("android")
+    kotlin("android") version "1.8.0"
 }
 
 val compileSdkVersion: String by project
@@ -9,6 +9,10 @@ val targetSdkVersion: String by project
 val packageName = "com.garmin.android.apps.connectiq.sample.comm"
 val versionCode: String by project
 val versionName: String by project
+
+kotlin {
+    jvmToolchain(17)
+}
 
 android {
     namespace = this@Build_gradle.packageName
