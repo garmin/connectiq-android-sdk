@@ -11,6 +11,7 @@ import android.view.MenuItem
 import android.widget.TextView
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.garmin.android.apps.connectiq.sample.comm.Device
 import com.garmin.android.apps.connectiq.sample.comm.R
 import com.garmin.android.apps.connectiq.sample.comm.adapter.IQDeviceAdapter
 import com.garmin.android.connectiq.ConnectIQ
@@ -76,7 +77,7 @@ class MainActivity : Activity() {
 
     private fun setupUi() {
         // Setup UI.
-        adapter = IQDeviceAdapter { onItemClick(it) }
+        adapter = IQDeviceAdapter { onItemClick(it.iqDevice) }
         findViewById<RecyclerView>(android.R.id.list).apply {
             layoutManager = LinearLayoutManager(this@MainActivity)
             adapter = this@MainActivity.adapter
@@ -121,18 +122,21 @@ class MainActivity : Activity() {
             // OR You can use getConnectedDevices to retrieve the list of connected devices only.
             // val devices = connectIQ.connectedDevices ?: listOf()
 
+            val deviceList: MutableList<Device> = mutableListOf()
+
             // Get the connectivity status for each device for initial state.
             devices.forEach {
                 it.status = connectIQ.getDeviceStatus(it)
+                deviceList.add(Device(it, connectIQ.getDevicePartNumber(it)))
             }
 
             // Update ui list with the devices data
-            adapter.submitList(devices)
+            adapter.submitList(deviceList)
 
             // Let's register for device status updates.
             devices.forEach {
                 connectIQ.registerForDeviceEvents(it) { device, status ->
-                    adapter.updateDeviceStatus(device, status)
+                    adapter.updateDeviceStatus(Device(device, connectIQ.getDevicePartNumber(device)), status)
                 }
             }
         } catch (exception: InvalidStateException) {
