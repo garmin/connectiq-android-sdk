@@ -4,32 +4,45 @@
  */
 package com.garmin.android.apps.connectiq.sample.comm.activities
 
-import android.app.Activity
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
-import android.widget.TextView
-import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
+import android.widget.Toast
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.activity.viewModels
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.garmin.android.apps.connectiq.sample.comm.Device
 import com.garmin.android.apps.connectiq.sample.comm.R
-import com.garmin.android.apps.connectiq.sample.comm.adapter.IQDeviceAdapter
 import com.garmin.android.connectiq.ConnectIQ
+import com.garmin.android.connectiq.IQApp
 import com.garmin.android.connectiq.IQDevice
 import com.garmin.android.connectiq.exception.InvalidStateException
-import com.garmin.android.connectiq.exception.ServiceUnavailableException
+import com.garmin.android.apps.connectiq.sample.comm.DeviceListViewModel
+import com.garmin.android.apps.connectiq.sample.comm.DeviceMessageViewModel
+import com.garmin.android.apps.connectiq.sample.comm.SnackbarViewModel
 
-class MainActivity : Activity() {
+class MainActivity : ComponentActivity() {
 
     private lateinit var connectIQ: ConnectIQ
-    private lateinit var adapter: IQDeviceAdapter
-
-    private var isSdkReady = false
+    private val deviceListViewModel: DeviceListViewModel by viewModels()
+    private val deviceMessageViewModel: DeviceMessageViewModel by viewModels()
+    private var isSdkReady by mutableStateOf(false)
 
     private val connectIQListener: ConnectIQ.ConnectIQListener =
         object : ConnectIQ.ConnectIQListener {
             override fun onInitializeError(errStatus: ConnectIQ.IQSdkErrorStatus) {
-                setEmptyState(getString(R.string.initialization_error) + ": " + errStatus.name)
+                deviceListViewModel.emptyStateMessage = getString(R.string.initialization_error) + ": " + errStatus.name
                 isSdkReady = false
             }
 
@@ -45,16 +58,29 @@ class MainActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
 
-        setupUi()
-        setupConnectIQSdk()
+        setContent {
+            val snackbarViewModel = viewModel<SnackbarViewModel>()
+
+            MainScreen(
+                onDeviceClick = { onItemClick(it.iqDevice) },
+                snackbarHostState = snackbarViewModel.snackbarHostState
+            )
+            setupConnectIQSdk()
+        }
     }
 
-    public override fun onResume() {
+    override fun onResume() {
         super.onResume()
         if (isSdkReady) {
             loadDevices()
+        }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        deviceListViewModel.fetchDevices().forEach {
+            connectIQ.unregisterForApplicationEvents(it.iqDevice, IQApp(COMM_WATCH_ID))
         }
     }
 
@@ -69,23 +95,14 @@ class MainActivity : Activity() {
             // release resources and prevent unwanted callbacks.
             connectIQ.unregisterAllForEvents()
             connectIQ.shutdown(this)
-        } catch (e: InvalidStateException) {
+        } catch (_: InvalidStateException) {
             // This is usually because the SDK was already shut down
             // so no worries.
         }
     }
 
-    private fun setupUi() {
-        // Setup UI.
-        adapter = IQDeviceAdapter { onItemClick(it.iqDevice) }
-        findViewById<RecyclerView>(android.R.id.list).apply {
-            layoutManager = LinearLayoutManager(this@MainActivity)
-            adapter = this@MainActivity.adapter
-        }
-    }
-
     private fun onItemClick(device: IQDevice) {
-        startActivity(DeviceActivity.getIntent(this, device))
+        startActivity(DeviceActivity.getIntent(this, device/*, usingBindingService*/))
     }
 
     private fun setupConnectIQSdk() {
@@ -115,43 +132,94 @@ class MainActivity : Activity() {
         }
     }
 
-    fun loadDevices() {
-        try {
-            // Retrieve the list of known devices.
-            val devices = connectIQ.knownDevices ?: listOf()
-            // OR You can use getConnectedDevices to retrieve the list of connected devices only.
-            // val devices = connectIQ.connectedDevices ?: listOf()
-
-            val deviceList: MutableList<Device> = mutableListOf()
-
-            // Get the connectivity status for each device for initial state.
-            devices.forEach {
-                it.status = connectIQ.getDeviceStatus(it)
-                deviceList.add(Device(it, connectIQ.getDevicePartNumber(it)))
-            }
-
-            // Update ui list with the devices data
-            adapter.submitList(deviceList)
-
-            // Let's register for device status updates.
-            devices.forEach {
-                connectIQ.registerForDeviceEvents(it) { device, status ->
-                    adapter.updateDeviceStatus(Device(device, connectIQ.getDevicePartNumber(device)), status)
-                }
-            }
-        } catch (exception: InvalidStateException) {
-            // This generally means you forgot to call initialize(), but since
-            // we are in the callback for initialize(), this should never happen
-        } catch (exception: ServiceUnavailableException) {
-            // This will happen if for some reason your app was not able to connect
-            // to the ConnectIQ service running within Garmin Connect Mobile.  This
-            // could be because Garmin Connect Mobile is not installed or needs to
-            // be upgraded.
-            setEmptyState(getString(R.string.service_unavailable))
+    private fun loadDevices() {
+        deviceListViewModel.loadDevices(connectIQ)
+        deviceListViewModel.fetchDevices().forEach {
+            listenByMyAppEvents(it.iqDevice)
         }
     }
 
-    private fun setEmptyState(text: String) {
-        findViewById<TextView>(android.R.id.empty)?.text = text
+    // Let's register to receive messages from our application on the device.
+    private fun listenByMyAppEvents(device: IQDevice) {
+        try {
+            connectIQ.registerForAppEvents(device, IQApp(COMM_WATCH_ID)) { commDevice, _, message, _ ->
+                val alertTitle = getTitleMessage(commDevice.deviceIdentifier)
+                deviceMessageViewModel.setAlertMessage(message, alertTitle)
+            }
+        } catch (_: InvalidStateException) {
+            Toast.makeText(this, "ConnectIQ is not in a valid state", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun getTitleMessage(deviceId: Long): String {
+        val storedDevice = deviceListViewModel.getDevice(deviceId)
+        return if (storedDevice != null) {
+            getString(R.string.received_message) + " " + storedDevice.iqDevice.friendlyName
+        } else {
+            getString(R.string.received_message)
+        }
+    }
+}
+
+@Composable
+fun MainScreen(
+    onDeviceClick: (Device) -> Unit,
+    snackbarHostState: SnackbarHostState,
+) {
+    val deviceListViewModel = viewModel<DeviceListViewModel>()
+    val deviceMessageViewModel = viewModel<DeviceMessageViewModel>()
+    val showAlertDialog by deviceMessageViewModel.showAlertDialog.collectAsState()
+    val alertDialogMessage by deviceMessageViewModel.alertMessage.collectAsState()
+    val devices = deviceListViewModel.devicesList
+    val emptyStateMessage = deviceListViewModel.emptyStateMessage
+    val okString = LocalContext.current.getString(android.R.string.ok)
+
+    LaunchedEffect(showAlertDialog) {
+        if (showAlertDialog) {
+            snackbarHostState.showSnackbar(message = alertDialogMessage,
+                                           actionLabel = okString)
+            deviceMessageViewModel.resetAlertDialog()
+        }
+    }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(title = { Text("Main Activity") })
+        },
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
+    ) { padding ->
+        Box(modifier = Modifier.padding(padding)) {
+            if (devices.isEmpty()) {
+                Text(
+                    text = emptyStateMessage,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .wrapContentSize(),
+                    textAlign = TextAlign.Center
+                )
+            } else {
+                LazyColumn {
+                    items(devices) { device ->
+                        DeviceItem(device = device, onClick = { onDeviceClick(device) })
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun DeviceItem(device: Device, onClick: () -> Unit) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(8.dp)
+            .clickable(onClick = onClick),
+        elevation = 4.dp
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(text = device.iqDevice.friendlyName, style = MaterialTheme.typography.h6)
+            Text(text = device.iqDevice.status?.name ?: "Unknown")
+        }
     }
 }

@@ -9,11 +9,12 @@
     <string name="load_devices">Reload Devices</string>
     <string name="initialization_error">Failed to initalize the SDK.\n</string>
     <string name="service_unavailable">The ConnectIQ service is unavailabe.</string>
+    <string name="connect_to_send">Connect device to send message.</string>
     <string name="tap_to_send">Tap message below to send to device.</string>
     <string name="open_app_open">Tap here to open the Comm app on the device.</string>
-    <string name="open_store">Tap here to open ConnectIQ Store.</string>
+    <string name="open_store">Tap here to open in ConnectIQ Store.</string>
     <string name="open_app_already_open">The Comm app is already open on the device.</string>
-    <string name="received_message">Received message from device.</string>
+    <string name="received_message">Received message from device:\t</string>
 
     <string name="hello_world_message">Hello World!</string>
     <string name="short_string_message">Hi</string>
@@ -26,7 +27,11 @@
     <string name="medium_string">Medium String</string>
     <string name="long_string">Long String</string>
     <string name="absurd_string">Absurd String</string>
+    <string name="boolean_value">Boolean</string>
+    <string name="integer_value">Integer</string>
+    <string name="character">Character</string>
     <string name="array">Array of Values</string>
+    <string name="byte_array">Byte Array</string>
     <string name="dictionary">Dictionary of Values</string>
     <string name="complex">Complex Data Type</string>
 

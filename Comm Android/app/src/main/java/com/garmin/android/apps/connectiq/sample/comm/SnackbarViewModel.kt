@@ -4,6 +4,9 @@
  */
 package com.garmin.android.apps.connectiq.sample.comm
 
-import com.garmin.android.connectiq.IQDevice
+import androidx.compose.material.SnackbarHostState
+import androidx.lifecycle.ViewModel
 
-data class Device(val iqDevice: IQDevice, val partNumber: String? = null)
+class SnackbarViewModel : ViewModel() {
+    val snackbarHostState = SnackbarHostState()
+}

@@ -4,37 +4,49 @@
  */
 package com.garmin.android.apps.connectiq.sample.comm.activities
 
-import android.app.Activity
-import android.app.AlertDialog
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.os.Parcelable
 import android.util.Log
-import android.view.View
-import android.widget.TextView
 import android.widget.Toast
-import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.activity.viewModels
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.garmin.android.apps.connectiq.sample.comm.DeviceMessageViewModel
+import com.garmin.android.apps.connectiq.sample.comm.DeviceViewModel
+import com.garmin.android.apps.connectiq.sample.comm.DeviceViewModelFactory
+import com.garmin.android.apps.connectiq.sample.comm.Message
 import com.garmin.android.apps.connectiq.sample.comm.MessageFactory
 import com.garmin.android.apps.connectiq.sample.comm.R
-import com.garmin.android.apps.connectiq.sample.comm.adapter.MessagesAdapter
 import com.garmin.android.connectiq.ConnectIQ
 import com.garmin.android.connectiq.IQApp
 import com.garmin.android.connectiq.IQDevice
 import com.garmin.android.connectiq.exception.InvalidStateException
 import com.garmin.android.connectiq.exception.ServiceUnavailableException
-
-private const val TAG = "DeviceActivity"
-private const val EXTRA_IQ_DEVICE = "IQDevice"
-private const val COMM_WATCH_ID = "a3421feed289106a538cb9547ab12095"
+import com.garmin.android.apps.connectiq.sample.comm.SnackbarViewModel
 
 // TODO Add a valid store app id.
 private const val STORE_APP_ID = ""
+const val COMM_WATCH_ID = "a3421feed289106a538cb9547ab12095"
 
-class DeviceActivity : Activity() {
+class DeviceActivity : ComponentActivity() {
 
     companion object {
+
+        const val TAG = "DeviceActivity"
+        private const val EXTRA_IQ_DEVICE = "IQDevice"
+
         fun getIntent(context: Context, device: IQDevice?): Intent {
             val intent = Intent(context, DeviceActivity::class.java)
             intent.putExtra(EXTRA_IQ_DEVICE, device)
@@ -42,43 +54,36 @@ class DeviceActivity : Activity() {
         }
     }
 
-    private var deviceStatusView: TextView? = null
-    private var openAppButtonView: TextView? = null
-
     private val connectIQ: ConnectIQ = ConnectIQ.getInstance()
     private lateinit var device: IQDevice
     private lateinit var myApp: IQApp
+    private var startSendMessage = 0L
 
-    private var appIsOpen = false
-    private val openAppListener = ConnectIQ.IQOpenApplicationListener { _, _, status ->
-        Toast.makeText(applicationContext, "App Status: " + status.name, Toast.LENGTH_SHORT).show()
-
-        if (status == ConnectIQ.IQOpenApplicationStatus.APP_IS_ALREADY_RUNNING) {
-            appIsOpen = true
-            openAppButtonView?.setText(R.string.open_app_already_open)
-        } else {
-            appIsOpen = false
-            openAppButtonView?.setText(R.string.open_app_open)
-        }
+    private var deviceStatus by mutableStateOf(IQDevice.IQDeviceStatus.UNKNOWN)
+    private val deviceMessageViewModel: DeviceMessageViewModel by viewModels()
+    private val deviceViewModel: DeviceViewModel by viewModels {
+        DeviceViewModelFactory(device, IQApp(COMM_WATCH_ID))
     }
 
-    public override fun onCreate(savedInstanceState: Bundle?) {
+    override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_device)
 
         device = intent.getParcelableExtra<Parcelable>(EXTRA_IQ_DEVICE) as IQDevice
         myApp = IQApp(COMM_WATCH_ID)
-        appIsOpen = false
+        deviceStatus = device.status
 
-        val deviceNameView = findViewById<TextView>(R.id.devicename)
-        deviceStatusView = findViewById(R.id.devicestatus)
-        openAppButtonView = findViewById(R.id.openapp)
-        val openAppStoreView = findViewById<View>(R.id.openstore)
+        setContent {
+            val snackbarViewModel = viewModel<SnackbarViewModel>()
 
-        deviceNameView?.text = device.friendlyName
-        deviceStatusView?.text = device.status?.name
-        openAppButtonView?.setOnClickListener { openMyApp() }
-        openAppStoreView?.setOnClickListener { openStore() }
+            DeviceScreen(
+                deviceName = device.friendlyName,
+                deviceStatus = deviceStatus,
+                deviceViewModel = deviceViewModel,
+                onOpenAppClick = { openMyApp() },
+                onMessageClick = { onMessageClick(it) },
+                snackbarHostState = snackbarViewModel.snackbarHostState
+            )
+        }
     }
 
     public override fun onResume() {
@@ -105,7 +110,23 @@ class DeviceActivity : Activity() {
 
         // Send a message to open the app
         try {
-            connectIQ.openApplication(device, myApp, openAppListener)
+            connectIQ.openApplication(device, myApp) { _, _, status ->
+                runOnUiThread {
+                    // This runs on the UI thread so we can update our UI safely.
+                    when (status) {
+                        ConnectIQ.IQOpenApplicationStatus.PROMPT_SHOWN_ON_DEVICE -> {
+                            Toast.makeText(this@DeviceActivity, "App opened successfully", Toast.LENGTH_SHORT).show()
+                        }
+                        ConnectIQ.IQOpenApplicationStatus.APP_IS_ALREADY_RUNNING -> {
+                            Toast.makeText(this@DeviceActivity, "App is already running ", Toast.LENGTH_SHORT).show()
+                        }
+                        else -> {
+                            Toast.makeText(this@DeviceActivity, "Failed to open app: ${status.name}", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                }
+                deviceViewModel.handleGetAppInfoResponse(device, myApp, status)
+            }
         } catch (_: Exception) {
         }
     }
@@ -116,12 +137,7 @@ class DeviceActivity : Activity() {
         // Send a message to open the store
         try {
             if (STORE_APP_ID.isBlank()) {
-                AlertDialog.Builder(this@DeviceActivity)
-                    .setTitle(R.string.missing_store_id)
-                    .setMessage(R.string.missing_store_id_message)
-                    .setPositiveButton(android.R.string.ok, null)
-                    .create()
-                    .show()
+                deviceMessageViewModel.setAlertMessage("${getString(R.string.missing_store_id)}\n${getString(R.string.missing_store_id_message)}")
             } else {
                 connectIQ.openStore(STORE_APP_ID)
             }
@@ -135,41 +151,10 @@ class DeviceActivity : Activity() {
         // can just get a reference to the one and only instance.
         try {
             connectIQ.registerForDeviceEvents(device) { _, status ->
-                // Since we will only get updates for this device, just display the status
-                deviceStatusView?.text = status.name
+                deviceStatus = status
             }
-        } catch (e: InvalidStateException) {
+        } catch (_: InvalidStateException) {
             Log.wtf(TAG, "InvalidStateException:  We should not be here!")
-        }
-    }
-
-
-    // Let's register to receive messages from our application on the device.
-    private fun listenByMyAppEvents() {
-        try {
-            connectIQ.registerForAppEvents(device, myApp) { _, _, message, _ ->
-                // We know from our Comm sample widget that it will only ever send us strings, but in case
-                // we get something else, we are simply going to do a toString() on each object in the
-                // message list.
-                val builder = StringBuilder()
-                if (message.size > 0) {
-                    for (o in message) {
-                        builder.append(o.toString())
-                        builder.append("\r\n")
-                    }
-                } else {
-                    builder.append("Received an empty message from the application")
-                }
-
-                AlertDialog.Builder(this@DeviceActivity)
-                    .setTitle(R.string.received_message)
-                    .setMessage(builder.toString())
-                    .setPositiveButton(android.R.string.ok, null)
-                    .create()
-                    .show()
-            }
-        } catch (e: InvalidStateException) {
-            Toast.makeText(this, "ConnectIQ is not in a valid state", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -180,18 +165,13 @@ class DeviceActivity : Activity() {
                 ConnectIQ.IQApplicationInfoListener {
                 override fun onApplicationInfoReceived(app: IQApp) {
                     // This is a good thing. Now we can show our list of message options.
-                    buildMessageList()
+                    deviceViewModel.handleAppInstalledResponse(app)
                 }
 
                 override fun onApplicationNotInstalled(applicationId: String) {
                     // The Comm widget is not installed on the device so we have
                     // to let the user know to install it.
-                    AlertDialog.Builder(this@DeviceActivity)
-                        .setTitle(R.string.missing_widget)
-                        .setMessage(R.string.missing_widget_message)
-                        .setPositiveButton(android.R.string.ok, null)
-                        .create()
-                        .show()
+                    deviceViewModel.handleAppNotInstalledResponse(applicationId)
                 }
             })
         } catch (_: InvalidStateException) {
@@ -199,28 +179,119 @@ class DeviceActivity : Activity() {
         }
     }
 
-    private fun buildMessageList() {
-        val adapter = MessagesAdapter { onItemClick(it) }
-        adapter.submitList(MessageFactory.getMessages(this@DeviceActivity))
-        findViewById<RecyclerView>(android.R.id.list).apply {
-            layoutManager = LinearLayoutManager(this@DeviceActivity)
-            this.adapter = adapter
+    private fun onMessageClick(message: Message) {
+        try {
+            connectIQ.sendMessage(device, myApp, message.payload) { _, _, status ->
+                val messageAckReceived = System.currentTimeMillis()
+                runOnUiThread {
+                    val toastText = status.name + " sent in " + (messageAckReceived - startSendMessage) + " ms"
+                    Toast.makeText(this@DeviceActivity, toastText, Toast.LENGTH_SHORT).show()
+                }
+            }
+            startSendMessage = System.currentTimeMillis()
+        } catch (_: InvalidStateException) {
+            Toast.makeText(this, "ConnectIQ is not in a valid state", Toast.LENGTH_SHORT).show()
+        } catch (_: ServiceUnavailableException) {
+            Toast.makeText(
+                this,
+                "ConnectIQ service is unavailable. Is Garmin Connect Mobile installed and running?",
+                Toast.LENGTH_LONG
+            ).show()
         }
     }
 
-    private fun onItemClick(message: Any) {
+    // Let's register to receive messages from our application on the device.
+    private fun listenByMyAppEvents() {
         try {
-            connectIQ.sendMessage(device, myApp, message) { _, _, status ->
-                Toast.makeText(this@DeviceActivity, status.name, Toast.LENGTH_SHORT).show()
+            connectIQ.registerForAppEvents(device, IQApp(COMM_WATCH_ID)) { _, _, message, _ ->
+                val alertTitle = getString(R.string.received_message) + device.friendlyName
+                deviceMessageViewModel.setAlertMessage(message, alertTitle)
             }
-        } catch (e: InvalidStateException) {
+        } catch (_: InvalidStateException) {
             Toast.makeText(this, "ConnectIQ is not in a valid state", Toast.LENGTH_SHORT).show()
-        } catch (e: ServiceUnavailableException) {
-            Toast.makeText(
-                this,
-                "ConnectIQ service is unavailable.   Is Garmin Connect Mobile installed and running?",
-                Toast.LENGTH_LONG
-            ).show()
+        }
+    }
+}
+
+@Composable
+fun DeviceScreen(
+    deviceName: String,
+    deviceStatus: IQDevice.IQDeviceStatus,
+    deviceViewModel: DeviceViewModel,
+    onOpenAppClick: () -> Unit,
+    onMessageClick: (Message) -> Unit,
+    snackbarHostState: SnackbarHostState
+) {
+    val deviceMessageViewModel = viewModel<DeviceMessageViewModel>()
+    val showAlertDialog by deviceMessageViewModel.showAlertDialog.collectAsState()
+    val alertDialogMessage by deviceMessageViewModel.alertMessage.collectAsState()
+    val appIsOpen by deviceViewModel.appIsOpen.collectAsState()
+    val appIsInstalled by deviceViewModel.appIsInstalled.collectAsState()
+    var messages: List<Message> = listOf()
+    val okString = LocalContext.current.getString(android.R.string.ok)
+
+    LaunchedEffect(showAlertDialog) {
+        if (showAlertDialog) {
+            snackbarHostState.showSnackbar(message = alertDialogMessage,
+                                           actionLabel = okString)
+            deviceMessageViewModel.resetAlertDialog()
+        }
+    }
+
+    if (appIsInstalled) {
+        messages.let {
+            messages = MessageFactory.getMessages(LocalContext.current)
+        }
+    }
+    val appNotInstalledAlert = LocalContext.current.getString(R.string.missing_widget) + "\n" +
+                    LocalContext.current.getString(R.string.missing_widget_message)
+    LaunchedEffect(appIsInstalled) {
+        if(!appIsInstalled) {
+            messages = listOf()
+            // Show alert dialog that app is not installed
+            snackbarHostState.showSnackbar(appNotInstalledAlert, okString)
+        }
+    }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(title = { Text("Device Activity") })
+        },
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
+    ) { padding ->
+        Column(modifier = Modifier.padding(padding).fillMaxSize().padding(16.dp)) {
+            Text(text = "Device: $deviceName", style = MaterialTheme.typography.h6)
+            Text(text = "Status: $deviceStatus", style = MaterialTheme.typography.body1)
+            Spacer(modifier = Modifier.height(16.dp))
+            val connected = deviceStatus == IQDevice.IQDeviceStatus.CONNECTED
+            Button(onClick = onOpenAppClick, enabled = connected) {
+                Text(text = if (appIsOpen) "App is Open" else "Open App")
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+            if (connected) {
+                LazyColumn {
+                    items(messages) { message ->
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(8.dp)
+                                .clickable { onMessageClick(message) },
+                            elevation = 4.dp
+                        ) {
+                            Text(
+                                text = message.text,
+                                modifier = Modifier.padding(16.dp),
+                                style = MaterialTheme.typography.body1
+                            )
+                        }
+                    }
+                }
+            } else {
+                Text(
+                    text = LocalContext.current.getString(R.string.connect_to_send),
+                    style = MaterialTheme.typography.body2
+                )
+            }
         }
     }
 }
