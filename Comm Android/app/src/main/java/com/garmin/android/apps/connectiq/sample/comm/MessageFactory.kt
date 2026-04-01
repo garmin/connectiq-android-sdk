@@ -33,6 +33,18 @@ object MessageFactory {
             context.getString(R.string.absurd_message)
         ),
         Message(
+            context.getString(R.string.boolean_value),
+            true
+        ),
+        Message(
+            context.getString(R.string.integer_value),
+            9
+        ),
+        Message(
+          context.getString(R.string.character),
+            'A'
+        ),
+        Message(
             context.getString(R.string.array),
             listOf(
                 "An",
@@ -44,6 +56,10 @@ object MessageFactory {
                 "pi",
                 java.lang.Double.valueOf(3.14159265359)
             )
+        ),
+        Message(
+          context.getString(R.string.byte_array),
+            byteArrayOf(0x10, 0x20, 0x30)
         ),
         Message(
             context.getString(R.string.dictionary),

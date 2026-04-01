@@ -4,6 +4,8 @@
  */
 package com.garmin.android.apps.connectiq.sample.comm
 
+import com.garmin.android.connectiq.ConnectIQ
+import com.garmin.android.connectiq.IQApp
 import com.garmin.android.connectiq.IQDevice
 
-data class Device(val iqDevice: IQDevice, val partNumber: String? = null)
+data class AppResponseResult(val iqDevice: IQDevice, val iqApp: IQApp, val status: ConnectIQ.IQOpenApplicationStatus)
